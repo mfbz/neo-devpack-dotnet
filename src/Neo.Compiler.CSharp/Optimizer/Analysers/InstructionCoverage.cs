@@ -91,7 +91,17 @@ namespace Neo.Optimizer
         public Dictionary<Instruction, HashSet<Instruction>> jumpTargetToSources { get; init; }
         public Dictionary<int, EntryType> pushaTargets { get; init; }
 
-        public InstructionCoverage(NefFile nef, ContractManifest manifest)
+        public InstructionCoverage(NefFile nef, ContractManifest manifest) : this(nef)
+        {
+            // It is unsafe to go parallel, because the coveredMap value is not true/false
+            //Parallel.ForEach(manifest.Abi.Methods, method =>
+            //    CoverInstruction(method.Offset, script, coveredMap)
+            //);
+            foreach (int addr in EntryPoint.EntryPointsByMethod(manifest).Keys)
+                CoverInstruction(addr);
+        }
+
+        public InstructionCoverage(NefFile nef)
         {
             this.script = nef.Script;
             coveredMap = new();
@@ -100,15 +110,17 @@ namespace Neo.Optimizer
             (jumpInstructionSourceToTargets, tryInstructionSourceToTargets, jumpTargetToSources) =
                 FindAllJumpAndTrySourceToTargets(addressAndInstructions);
             pushaTargets = EntryPoint.EntryPointsByCallA(nef);
-            foreach ((int addr, Instruction _) in addressAndInstructions)
-                coveredMap.Add(addr, BranchType.UNCOVERED);
+            ResetCoveredMap(init: true);
+        }
 
-            // It is unsafe to go parallel, because the coveredMap value is not true/false
-            //Parallel.ForEach(manifest.Abi.Methods, method =>
-            //    CoverInstruction(method.Offset, script, coveredMap)
-            //);
-            foreach ((int addr, _) in EntryPoint.EntryPointsByMethod(manifest))
-                CoverInstruction(addr);
+        public void ResetCoveredMap(bool init = false)
+        {
+            foreach ((int addr, Instruction _) in addressAndInstructions)
+                if (init)
+                    // This throws exception when there exists duplicate addr
+                    coveredMap.Add(addr, BranchType.UNCOVERED);
+                else
+                    coveredMap[addr] = BranchType.UNCOVERED;
         }
 
         public static Stack<TryStack> CopyStack(Stack<TryStack> stack) => new(stack.Reverse());

@@ -124,6 +124,7 @@ namespace Neo.Optimizer
             CALL,
             CALL_L,
             CALLA,
+            // CALLT is not included because it generally calls another contract
         };
 
         public static readonly HashSet<OpCode> conditionalJump = new()
