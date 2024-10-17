@@ -17,35 +17,35 @@ namespace Neo.SymVM.Types
     /// <summary>
     /// Represents <see langword="null"/> in the VM.
     /// </summary>
-    public class Null : SymStackItem
+    public class UnknownStackItem : SymStackItem
     {
-        public new StackItemType Type => StackItemType.Any;
+        public new StackItemType Type;
 
-        internal Null() { }
+        public UnknownStackItem(StackItemType type = StackItemType.Any)
+        {
+            this.Type = type;
+        }
 
         public override SymStackItem ConvertTo(StackItemType type)
         {
-            if (type == StackItemType.Any || !Enum.IsDefined(typeof(StackItemType), type))
-                throw new InvalidCastException($"Type can't be converted to StackItemType: {type}");
-            return this;
+            return new UnknownStackItem(type: type);
         }
 
         public new SymStackItem Equals(SymStackItem? other)
         {
-            if (ReferenceEquals(this, other)) return true;
-            if (other is UnknownStackItem)
-                return new UnknownStackItem(type: StackItemType.Boolean);
-            return other is Null;
+            if (ReferenceEquals(this, other))
+                return true;
+            return new UnknownStackItem(type: StackItemType.Boolean);
         }
 
-        public new bool GetBoolean()
+        public new SymStackItem GetBoolean()
         {
-            return false;
+            return new UnknownStackItem(type: StackItemType.Boolean);
         }
 
-        public override int GetHashCode()
+        public new SymStackItem GetHashCode()
         {
-            return 0;
+            return new UnknownStackItem(type: StackItemType.Integer);
         }
 
         [return: MaybeNull]
@@ -56,12 +56,12 @@ namespace Neo.SymVM.Types
 
         public override string? GetString()
         {
-            return null;
+            return ToString();
         }
 
         public override string ToString()
         {
-            return "NULL";
+            return $"UNKNOWN {nameof(SymStackItem)} of type {Type}";
         }
     }
 }

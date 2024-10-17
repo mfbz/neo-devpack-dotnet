@@ -11,6 +11,7 @@
 
 #pragma warning disable CS0659
 
+using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -22,7 +23,7 @@ namespace Neo.SymVM.Types
     /// <summary>
     /// Represents a symbolic object for all types in the VM.
     /// </summary>
-    public class SymStackItem : IEquatable<SymStackItem>
+    public class SymStackItem
     {
         [ThreadStatic]
         private static Boolean? tls_true = null;
@@ -113,13 +114,18 @@ namespace Neo.SymVM.Types
             return this;
         }
 
-        public override bool Equals(object? obj)
+        public new SymStackItem Equals(object? obj)
         {
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj is SymStackItem item) return Equals(item);
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (this is UnknownStackItem || obj is UnknownStackItem)
+                return new UnknownStackItem(type: StackItemType.Boolean);
+            if (obj is SymStackItem item)
+                return Equals(item);
             return false;
         }
 
+        // this method will be overridden by other types
         public virtual bool Equals(SymStackItem? other)
         {
             return ReferenceEquals(this, other);
@@ -268,5 +274,13 @@ namespace Neo.SymVM.Types
         public static SymStackItem operator %(SymStackItem a, SymStackItem b) => a;
         public static SymStackItem operator &(SymStackItem a, SymStackItem b) => a;
         public static SymStackItem operator |(SymStackItem a, SymStackItem b) => a;
+        public static SymStackItem operator !(SymStackItem a)
+        {
+            if (a is Boolean)
+                return !a;
+            if (a is UnknownStackItem)
+                return new UnknownStackItem(StackItemType.Boolean);
+            throw new InvalidCastException($"Invalid operator ! for {nameof(SymStackItem)} type {a.Type}");
+        }
     }
 }

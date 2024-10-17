@@ -33,10 +33,12 @@ namespace Neo.SymVM.Types
             _object = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        public override bool Equals(SymStackItem? other)
+        public new SymStackItem Equals(SymStackItem? other)
         {
-            if (ReferenceEquals(this, other)) return true;
-            if (other is InteropInterface i) return _object.Equals(i._object);
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is InteropInterface i)
+                return _object.Equals(i._object);
             return false;
         }
 
